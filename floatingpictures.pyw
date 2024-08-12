@@ -62,7 +62,6 @@ class FloatingPictures(pyglet.window.Window):
         self.image_sprites = []
         self.image_queue = queue.Queue(maxsize=10)
         self.previous_sprite = []
-        self.primer = 0
         self.image_paths = []
 
     def start(self):
