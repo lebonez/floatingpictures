@@ -7,6 +7,7 @@ import logging
 import random
 import configparser
 import queue
+import ctypes
 
 import tkinter as tk
 from tkinter import ttk
@@ -228,6 +229,7 @@ class FloatingPictures:
         return potential_locations
 
     def queue_image(self):
+        ctypes.windll.ole32.CoInitialize(None)
         while True:
             if not hasattr(self, 'image_paths') or not self.image_paths:
                 self.image_paths = get_image_paths(self.images_path)
