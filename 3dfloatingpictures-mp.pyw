@@ -434,7 +434,7 @@ def main():
 
 def run_screensaver(fullscreen, config):
     close_flag = Value(c_bool, False)
-    display = pyglet.canvas.get_display()
+    display = pyglet.display.get_display()
     screens = display.get_screens()
     processes = []
     if fullscreen and len(screens) > 1:

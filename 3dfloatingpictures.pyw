@@ -430,7 +430,7 @@ def main():
         sys.exit()
 
 def run_screensaver(fullscreen, config):
-    display = pyglet.canvas.get_display()
+    display = pyglet.display.get_display()
     screens = display.get_screens()
     create_window(screens[0], fullscreen, config)
 
