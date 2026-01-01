@@ -229,7 +229,8 @@ class FloatingPictures:
         return potential_locations
 
     def queue_image(self):
-        ctypes.windll.ole32.CoInitialize(None)
+        if hasattr(ctypes, 'windll'):
+            ctypes.windll.ole32.CoInitialize(None)
         while True:
             if not hasattr(self, 'image_paths') or not self.image_paths:
                 self.image_paths = get_image_paths(self.images_path)
@@ -243,19 +244,46 @@ class FloatingPictures:
                 try:
                     img = Image.open(image_path)
                     img = ImageOps.exif_transpose(img)
+                    width, height = self._get_scaled_dimensions(img)
+                    img = img.resize((width, height), Image.Resampling.LANCZOS).convert("RGBA")
+
+                    combined = self._add_blurred_shadow(img)
+                    combined = combined.transpose(Image.FLIP_TOP_BOTTOM)
+
+                    raw_data = combined.tobytes()
+                    img_data = pyglet.image.ImageData(combined.width, combined.height, 'RGBA', raw_data)
+                    self.image_queue.put(img_data)
                 except (IOError, FileNotFoundError):
-                    logger.warning(f"Skipping {image_path}...")
+                    source = pyglet.media.load(image_path)
+                    img = source.get_next_video_frame()
+                    image_data = img.get_image_data()
+
+                    width = image_data.width
+                    height = image_data.height
+                    fmt = image_data.format
+                    pitch = image_data.pitch
+
+                    data = image_data.get_data(fmt, pitch)
+
+                    pil_img = Image.frombytes(
+                        fmt,
+                        (width, height),
+                        data,
+                        "raw",
+                        fmt,
+                        abs(pitch)
+                    )
+                    img = ImageOps.exif_transpose(pil_img)
+                    width, height = self._get_scaled_dimensions(img)
+                    img = img.resize((width, height), Image.Resampling.LANCZOS).convert("RGBA")
+
+                    combined = self._add_blurred_shadow(img)
+                    combined = combined.transpose(Image.FLIP_TOP_BOTTOM)
+
+                    raw_data = combined.tobytes()
+                    img_data = pyglet.image.ImageData(combined.width, combined.height, 'RGBA', raw_data)
+                    self.image_queue.put(img_data)
                     continue
-
-                width, height = self._get_scaled_dimensions(img)
-                img = img.resize((width, height), Image.Resampling.LANCZOS).convert("RGBA")
-
-                combined = self._add_blurred_shadow(img)
-                combined = combined.transpose(Image.FLIP_TOP_BOTTOM)
-
-                raw_data = combined.tobytes()
-                img_data = pyglet.image.ImageData(combined.width, combined.height, 'RGBA', raw_data)
-                self.image_queue.put(img_data)
             else:
                 time.sleep(0.5)
 
